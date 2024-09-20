@@ -13,6 +13,8 @@ jobs:
       # 1. Checkout do Repositório
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Necessário para acessar todas as tags
 
       # 2. Configurar Python
       - name: Set up Python
@@ -32,7 +34,6 @@ jobs:
           python -m PyInstaller --version
 
       # 5. Construir Executável com PyInstaller
-      - name: Build Executable with PyInstaller
         run: |
           python -m PyInstaller --onefile script.py
 
@@ -53,13 +54,57 @@ jobs:
             Write-Output "Executable successfully created."
           }
 
-      # 8. Criar Release e Anexar Executável
+      # 8. Configurar Git para Criar Tags
+      - name: Set up Git for Tagging
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 9. Obter a Última Tag Semântica
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+
+      # 10. Incrementar a Versão (PATCH)
+      - name: Increment version
+        id: increment_version
+        run: |
+          if [ -z "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
+            new_version="v0.1.0"
+          else
+            # Remove o prefixo 'v' e separa os componentes
+            version=${{ steps.get_latest_tag.outputs.latest_tag }}
+            version=${version#v}
+            IFS='.' read -r -a parts <<< "$version"
+            major=${parts[0]}
+            minor=${parts[1]}
+            patch=${parts[2]}
+            patch=$((patch + 1))
+            new_version="v$major.$minor.$patch"
+          fi
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+
+      # 11. Criar uma Nova Tag
+      - name: Create new tag
+        run: |
+          git tag ${{ steps.increment_version.outputs.new_version }}
+          git push origin ${{ steps.increment_version.outputs.new_version }}
+
+      # 12. Criar Release e Anexar Executável
       - name: Create Release
         id: create_release
-        uses: ncipollo/release-action@v1.8.1  # Use a versão mais recente da ação
+        uses: ncipollo/release-action@v1.8.1
         with:
-          tag: v1.0.${{ github.run_number }}  # Defina a tag de acordo com sua convenção de versionamento
-          name: Release v1.0.${{ github.run_number }}  # Nome da release
+          token: ${{ secrets.GITHUB_TOKEN }}  # Usa o token padrão
+          tag: ${{ steps.increment_version.outputs.new_version }}
+          name: Release ${{ steps.increment_version.outputs.new_version }}
           draft: false
           prerelease: false
-          files: dist/script.exe  # Caminho para o executável a ser anexado
+          files: dist/script.exe
+          omitBody: false
+          omitBodyDuringUpdate: false
+          omitName: false
+          omitNameDuringUpdate: false
+          replacesArtifacts: true
