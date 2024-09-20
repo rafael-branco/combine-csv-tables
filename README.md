@@ -1,6 +1,6 @@
-# Guia de Uso do Script `processador_csv`
+# Guia de Uso do Script
 
-Este guia irá lhe ajudar a utilizar o script `processador_csv.exe`, disponível na seção de releases do GitHub.
+Este guia irá lhe ajudar a utilizar o script `script.exe`, disponível na seção de releases do GitHub.
 
 ## Requisitos
 
@@ -16,10 +16,10 @@ Este guia irá lhe ajudar a utilizar o script `processador_csv.exe`, disponível
 
 ## Como Usar
 
-1. **Baixar o `processador_csv.exe`**:Você pode baixar o arquivo executável (`processador_csv.exe`) diretamente na seção de releases do [GitHub](https://github.com/rafael-branco/combine-csv-tables/releases/latest). Isso elimina a necessidade de instalar dependências Python.
+1. **Baixar o `script.exe`**:Você pode baixar o arquivo executável (`script.exe`) diretamente na seção de releases do [GitHub](https://github.com/rafael-branco/combine-csv-tables/releases/latest). Isso elimina a necessidade de instalar dependências Python.
 2. **Executar o Programa**:
 
-   - Dê um duplo clique no arquivo `processador_csv.exe`.
+   - Dê um duplo clique no arquivo `script.exe`.
    - Caso o Windows exiba a mensagem "O Windows protegeu seu PC" (SmartScreen), clique em **Mais informações** e depois em **Executar assim mesmo**.
 3. **Seleção do Diretório**:
 
