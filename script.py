@@ -11,19 +11,26 @@ import sys
 import queue
 from tkinter import ttk
 
-
+# Configure logging
 logging.basicConfig(
     filename="info.log",
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+def processar_diretorio(diretorio, q):
+    """
+    Processa os arquivos CSV no diretório especificado e envia atualizações para a GUI via fila.
 
-def processar_diretorio(diretorio, status_var, progress_var, total_files):
+    Args:
+        diretorio (str): Caminho do diretório a ser processado.
+        q (queue.Queue): Fila para comunicação thread-safe com a GUI.
+    """
     arquivos = glob.glob(os.path.join(diretorio, "**", "*.csv"), recursive=True)
-    logging.info(f"Total de arquivos encontrados: {len(arquivos)}")
-    status_var.set(f"Total de arquivos encontrados: {len(arquivos)}")
-    progress_var["maximum"] = len(arquivos)
+    total_arquivos = len(arquivos)
+    logging.info(f"Total de arquivos encontrados: {total_arquivos}")
+    q.put({'type': 'update_status', 'value': f"Total de arquivos encontrados: {total_arquivos}"})
+    q.put({'type': 'set_progress_max', 'value': total_arquivos})
 
     lista_dfs = []
 
@@ -57,7 +64,6 @@ def processar_diretorio(diretorio, status_var, progress_var, total_files):
 
     for idx, arquivo in enumerate(arquivos, start=1):
         nome_arquivo = os.path.basename(arquivo)
-        status_var.set(f"Processando arquivo {idx} de {len(arquivos)}: {nome_arquivo}")
         logging.info(f"Iniciando processamento do arquivo: {nome_arquivo}")
 
         try:
@@ -343,9 +349,9 @@ def processar_diretorio(diretorio, status_var, progress_var, total_files):
             logging.error(f"Erro ao processar o arquivo {nome_arquivo}: {e}")
             continue
 
-        progress_var.set(idx)
-
-        status_var.set(f"Processando arquivo {idx} de {len(arquivos)}: {nome_arquivo}")
+        # Enviar atualização para a fila
+        q.put({'type': 'update_progress', 'value': idx})
+        q.put({'type': 'update_status', 'value': f"Processando arquivo {idx} de {total_arquivos}: {nome_arquivo}"})
 
     if lista_dfs:
         df_final = pd.concat(lista_dfs, ignore_index=True)
@@ -367,49 +373,60 @@ def processar_diretorio(diretorio, status_var, progress_var, total_files):
         logging.info(
             "Processamento concluído! O arquivo 'planilha_unificada.csv' foi criado."
         )
-        status_var.set(
-            "Processamento concluído! Arquivo 'planilha_unificada.csv' criado."
-        )
-        messagebox.showinfo(
-            "Concluído", "Processamento concluído! Verifique os logs para detalhes."
-        )
+        q.put({'type': 'update_status', 'value': "Processamento concluído! Arquivo 'planilha_unificada.csv' criado."})
+        q.put({'type': 'show_info', 'value': "Processamento concluído! Verifique os logs para detalhes."})
     else:
         logging.info(
             "Nenhum dado foi processado. Verifique os logs para mais informações."
         )
-        status_var.set(
-            "Nenhum dado foi processado. Verifique os logs para mais informações."
-        )
-        messagebox.showwarning(
-            "Nenhum Dado",
-            "Nenhum dado foi processado. Verifique os logs para mais informações.",
-        )
+        q.put({'type': 'update_status', 'value': "Nenhum dado foi processado. Verifique os logs para mais informações."})
+        q.put({'type': 'show_warning', 'value': "Nenhum dado foi processado. Verifique os logs para mais informações."})
 
+def iniciar_processamento(diretorio, q, botao_processar):
+    """
+    Inicia a thread de processamento e desativa o botão de processamento.
 
-def iniciar_processamento(diretorio, status_var, progress_var, total_files):
-    thread = threading.Thread(
-        target=processar_diretorio,
-        args=(diretorio, status_var, progress_var, total_files),
-    )
+    Args:
+        diretorio (str): Caminho do diretório a ser processado.
+        q (queue.Queue): Fila para comunicação thread-safe com a GUI.
+        botao_processar (tk.Button): Referência ao botão de processamento para desativação/ativação.
+    """
+    def target():
+        processar_diretorio(diretorio, q)
+        # Reativar o botão após o processamento
+        q.put({'type': 'enable_button'})
+
+    thread = threading.Thread(target=target, daemon=True)
     thread.start()
 
+def selecionar_diretorio(root, q, botao_processar):
+    """
+    Abre um diálogo para seleção de diretório e inicia o processamento se um diretório for selecionado.
 
-def selecionar_diretorio(root, status_var, progress_var):
+    Args:
+        root (tk.Tk): Instância principal do Tkinter.
+        q (queue.Queue): Fila para comunicação thread-safe com a GUI.
+        botao_processar (tk.Button): Referência ao botão de processamento para desativação/ativação.
+    """
     diretorio = filedialog.askdirectory()
     if diretorio:
-        status_var.set(f"Diretório selecionado: {diretorio}")
-        iniciar_processamento(diretorio, status_var, progress_var, None)
+        q.put({'type': 'update_status', 'value': f"Diretório selecionado: {diretorio}"})
+        botao_processar.config(state=tk.DISABLED)  # Desativa o botão
+        iniciar_processamento(diretorio, q, botao_processar)
     else:
-        status_var.set("Nenhum diretório foi selecionado.")
+        q.put({'type': 'update_status', 'value': "Nenhum diretório foi selecionado."})
         messagebox.showwarning(
             "Seleção de Diretório", "Nenhum diretório foi selecionado."
         )
 
-
 def main():
+    """
+    Configura a interface gráfica e inicia o loop principal do Tkinter.
+    """
     root = tk.Tk()
-    root.title("Processador de CSV com GUI")
+    root.title("Processador de CSV")
     root.geometry("600x200")
+    root.resizable(False, False)
 
     status_var = tk.StringVar()
     status_var.set("Selecione um diretório para iniciar o processamento.")
@@ -417,25 +434,57 @@ def main():
     control_frame = tk.Frame(root)
     control_frame.pack(pady=10, padx=10, fill="x")
 
+    # Initialize the queue
+    q = queue.Queue()
+
+    # Botão para selecionar diretório e processar
     selecionar_btn = tk.Button(
         control_frame,
         text="Selecionar Diretório e Processar",
-        command=lambda: selecionar_diretorio(root, status_var, progress_var),
+        command=lambda: selecionar_diretorio(root, q, selecionar_btn),
+        width=30
     )
-    selecionar_btn.pack()
+    selecionar_btn.pack(pady=5)
 
+    # Barra de progresso
     progress_var = ttk.Progressbar(
         root, orient="horizontal", length=500, mode="determinate"
     )
     progress_var.pack(pady=20)
 
+    # Label de status
     status_label = tk.Label(
         root, textvariable=status_var, wraplength=500, justify="left"
     )
     status_label.pack(pady=10)
 
-    root.mainloop()
+    def process_queue():
+        """
+        Processa mensagens da fila e atualiza a interface gráfica de acordo.
+        """
+        try:
+            while True:
+                msg = q.get_nowait()
+                if msg['type'] == 'update_progress':
+                    progress_var['value'] = msg['value']
+                elif msg['type'] == 'update_status':
+                    status_var.set(msg['value'])
+                elif msg['type'] == 'set_progress_max':
+                    progress_var['maximum'] = msg['value']
+                elif msg['type'] == 'show_info':
+                    messagebox.showinfo("Concluído", msg['value'])
+                elif msg['type'] == 'show_warning':
+                    messagebox.showwarning("Aviso", msg['value'])
+                elif msg['type'] == 'enable_button':
+                    selecionar_btn.config(state=tk.NORMAL)
+        except queue.Empty:
+            pass
+        root.after(100, process_queue)
 
+    # Inicia o processamento da fila
+    process_queue()
+
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
