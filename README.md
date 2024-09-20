@@ -16,7 +16,7 @@ Este guia irá lhe ajudar a utilizar o script `processador_csv.exe`, disponível
 
 ## Como Usar
 
-1. **Baixar o `processador_csv.exe`**:Você pode baixar o arquivo executável (`processador_csv.exe`) diretamente na seção de releases do [GitHub](https://github.com/rafael-branco/combine-csv-tables/release). Isso elimina a necessidade de instalar dependências Python.
+1. **Baixar o `processador_csv.exe`**:Você pode baixar o arquivo executável (`processador_csv.exe`) diretamente na seção de releases do [GitHub](https://github.com/rafael-branco/combine-csv-tables/releases/latest). Isso elimina a necessidade de instalar dependências Python.
 2. **Executar o Programa**:
 
    - Dê um duplo clique no arquivo `processador_csv.exe`.
