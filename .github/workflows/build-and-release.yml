@@ -102,12 +102,12 @@ jobs:
         uses: actions/create-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}  # Usa o token padrão
-          tag: ${{ steps.increment_version.outputs.new_version }}
-          name: Release ${{ steps.increment_version.outputs.new_version }}
-          overwrite: true
+          tag_name: ${{ steps.increment_version.outputs.new_version }}
+          release_name: Release ${{ steps.increment_version.outputs.new_version }}
           draft: false
           prerelease: false
 
+      # 13. Upload de Ativo do Release
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
