@@ -34,6 +34,7 @@ jobs:
           python -m PyInstaller --version
 
       # 5. Construir Executável com PyInstaller
+      - name: Build Executable with PyInstaller
         run: |
           python -m PyInstaller --onefile script.py
 
@@ -66,6 +67,7 @@ jobs:
         run: |
           latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+        shell: bash  # Especifica o uso do bash
 
       # 10. Incrementar a Versão (PATCH)
       - name: Increment version
@@ -85,12 +87,14 @@ jobs:
             new_version="v$major.$minor.$patch"
           fi
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
+        shell: bash  # Especifica o uso do bash
 
       # 11. Criar uma Nova Tag
       - name: Create new tag
         run: |
           git tag ${{ steps.increment_version.outputs.new_version }}
           git push origin ${{ steps.increment_version.outputs.new_version }}
+        shell: bash  # Especifica o uso do bash
 
       # 12. Criar Release e Anexar Executável
       - name: Create Release
