@@ -16,40 +16,40 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.11'  # Substitua pela versão específica do Python que você está usando
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Verify PyInstaller Installation
+        run: |
+          python -m PyInstaller --version
+
       - name: Build Executable with PyInstaller
         run: |
-          pyinstaller --onefile script.py
+          python -m PyInstaller --onefile script.py
 
-      - name: Archive Executable
+      - name: Check if Executable Exists
+        run: |
+          if not exist dist\script.exe (
+            echo "Executable not found!"
+            exit 1
+          )
+
+      - name: Upload Executable as Artifact
         uses: actions/upload-artifact@v3
         with:
           name: executable
           path: dist/script.exe
 
-      - name: Create GitHub Release
+      - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          release_name: Release v1.0.${{ github.run_number }}
+          tag: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
           draft: false
           prerelease: false
-
-      - name: Upload Executable to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/script.exe
-          asset_name: script.exe
-          asset_content_type: application/octet-stream
+          files: dist/script.exe
