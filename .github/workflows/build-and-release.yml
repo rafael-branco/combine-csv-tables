@@ -32,13 +32,16 @@ jobs:
           python -m PyInstaller --onefile script.py
 
       - name: Check if Executable Exists
+        shell: pwsh
         run: |
-          if not exist dist\script.exe (
-            echo "Executable not found!"
+          if (-not (Test-Path "dist\script.exe")) {
+            Write-Output "Executable not found!"
             exit 1
-          )
+          } else {
+            Write-Output "Executable successfully created."
+          }
 
-      - name: Upload Executable as Artifact
+      - name: Archive Executable
         uses: actions/upload-artifact@v3
         with:
           name: executable
