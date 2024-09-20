@@ -104,11 +104,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}  # Usa o token padrão
           tag: ${{ steps.increment_version.outputs.new_version }}
           name: Release ${{ steps.increment_version.outputs.new_version }}
-          draft: false
-          prerelease: false
+
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{steps.create_release.outputs.upload_url}}
           asset_path: dist/script.exe
-          omitBody: false
-          omitBodyDuringUpdate: false
-          omitName: false
-          omitNameDuringUpdate: false
-          replacesArtifacts: true
+          asset_name: script.exe
+          asset_content_type: application/zip
