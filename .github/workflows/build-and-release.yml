@@ -16,8 +16,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'  # Substitua pela versão específica do Python que você está usando
-
+          python-version: '3.11'  
+          
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -31,6 +31,11 @@ jobs:
         run: |
           python -m PyInstaller --onefile script.py
 
+      - name: List dist Directory After Build
+        run: |
+          dir dist
+        shell: cmd
+
       - name: Check if Executable Exists
         shell: pwsh
         run: |
@@ -41,18 +46,10 @@ jobs:
             Write-Output "Executable successfully created."
           }
 
-      - name: Archive Executable
-        uses: actions/upload-artifact@v3
-        with:
-          name: executable
-          path: dist/script.exe
-
+      # 8. Criar Release e Anexar Executável
       - name: Create Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
           tag: v1.0.${{ github.run_number }}
-          name: Release v1.0.${{ github.run_number }}
-          draft: false
-          prerelease: false
-          files: dist/script.exe
+          name: Release v1.
