@@ -99,11 +99,14 @@ jobs:
       # 12. Criar Release e Anexar Executável
       - name: Create Release
         id: create_release
-        uses: ncipollo/release-action@v1.8.1
+        uses: actions/create-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}  # Usa o token padrão
           tag: ${{ steps.increment_version.outputs.new_version }}
           name: Release ${{ steps.increment_version.outputs.new_version }}
+          overwrite: true
+          draft: false
+          prerelease: false
 
       - name: Upload Release Asset
         id: upload-release-asset
